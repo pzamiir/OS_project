@@ -1,4 +1,4 @@
-extern int schedulingMethod;
+extern int schedulerStrategy;
 
 
 // Per-CPU state

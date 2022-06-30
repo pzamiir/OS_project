@@ -15,7 +15,7 @@ struct {
 static struct proc *initproc;
 
 int nextpid = 1;
-int schedulingMethod = 0;
+int schedulerStrategy = 0;
 
 extern void forkret(void);
 
@@ -226,19 +226,16 @@ fork(void) {
     return pid;
 }
 
-int existsBetterProcess(void) {
-    int current_priority = myproc()->priority;
-    struct proc *p;
+ int isMoreImportantProcess(){
+    int found=0;
     acquire(&ptable.lock);
-    for (p = ptable.proc; p < &ptable.proc[NPROC]; p++) {
-        if (p->state == RUNNABLE && p->priority < current_priority) {
-            release(&ptable.lock);
-            return 1;
-        }
-    }
+    struct proc *p;
+    for (p = ptable.proc; p < &ptable.proc[NPROC]; p++) 
+        if (p->state == RUNNABLE && p->priority < myproc()->priority) 
+            found=1;    
     release(&ptable.lock);
-    return 0;
-}
+    return found;
+ }
 
 void updateProcessTimes(void) {
     struct proc *p;
@@ -355,6 +352,29 @@ wait(void) {
     }
 }
 
+int getHighestPrio(){
+    struct proc * t;
+    int priority=6;
+    for (t = ptable.proc; t < &ptable.proc[NPROC]; t++) {
+        if (t->state == RUNNABLE && t->priority < priority)
+            priority = t->priority;
+    }
+    return priority;
+}
+
+void makePriorityQueue(int* queue ,int priority){
+    int queueIndex = 0;
+    struct proc * p;
+    for (p = ptable.proc; p < &ptable.proc[NPROC]; p++) {
+        if (p->state == RUNNABLE && p->priority == priority) {
+            queue[queueIndex] = 1;
+        } else {
+            queue[queueIndex] = 0;
+        }
+        queueIndex++;
+    }
+}
+
 //PAGEBREAK: 42
 // Per-CPU process scheduler.
 // Each CPU calls scheduler() after setting itself up.
@@ -368,129 +388,57 @@ scheduler(void) {
     struct proc *p;
     struct cpu *c = mycpu();
     c->proc = 0;
-    schedulingMethod = 0;
+    schedulerStrategy = 0;
     int multiQueueQuanta[6] = {30, 20, 10, 6, 3, 1};
     for (;;) {
-        // Enable interrupts on this processor.
         sti();
-
-        // Loop over process table looking for process to run.
         acquire(&ptable.lock);
-        if (schedulingMethod == 0 || schedulingMethod == 1) {
+
+        if (schedulerStrategy <= 1) {
             for (p = ptable.proc; p < &ptable.proc[NPROC]; p++) {
                 if (p->state != RUNNABLE)
                     continue;
 
-                // Switch to chosen process.  It is the process's job
-                // to release ptable.lock and then reacquire it
-                // before jumping back to us.
-                if (schedulingMethod == 1)
+                c->proc = p;
+                if (schedulerStrategy == 1)
                     p->burstHop = QUANTUM;
                 else
                     p->burstHop = 1;
-                c->proc = p;
                 switchuvm(p);
                 p->state = RUNNING;
 
                 swtch(&(c->scheduler), p->context);
                 switchkvm();
-
-                // Process is done running for now.
-                // It should have changed its p->state before coming back.
                 c->proc = 0;
             }
-        } else if (schedulingMethod == 2|| schedulingMethod == 3 || schedulingMethod == 4) {
-            //run round robin - similar to main round robin but the processes are the ones in this queue
-            int k=0;
+        } else if (schedulerStrategy == 2 || schedulerStrategy == 3) {
+            int queueIndex=0;
             for (p = ptable.proc; p < &ptable.proc[NPROC]; p++) {
-                int minPriority = 6;
-                //find lowest priority value
-                struct proc * t;
-                for (t = ptable.proc; t < &ptable.proc[NPROC]; t++) {
-                    if (t->state == RUNNABLE && t->priority < minPriority)
-                        minPriority = t->priority;
-                }
-                //find queue of programs with the lowest priority
-                int lowPriorityProcs[NPROC];
-                int i = 0;
-                for (t = ptable.proc; t < &ptable.proc[NPROC]; t++) {
-                    if (t->state == RUNNABLE && t->priority == minPriority) {
-                        lowPriorityProcs[i] = 1;
-                    } else {
-                        lowPriorityProcs[i] = 0;
-                    }
-                    i++;
-                }
-
-                if (p->state != RUNNABLE || lowPriorityProcs[k] == 0){
-                    k++;
+                int priorityQueue[NPROC];
+                makePriorityQueue(priorityQueue,getHighestPrio());                                 
+                if (p->state != RUNNABLE || priorityQueue[queueIndex] == 0){
+                    queueIndex++;
                     continue;
                 }
 
-                // Switch to chosen process.  It is the process's job
-                // to release ptable.lock and then reacquire it
-                // before jumping back to us.
-                if(schedulingMethod==2)
+                if(schedulerStrategy==2)
                     p->burstHop = QUANTUM;
                 else
                     p->burstHop=multiQueueQuanta[p->priority-1];
+
                 c->proc = p;
                 switchuvm(p);
                 p->state = RUNNING;
 
                 swtch(&(c->scheduler), p->context);
                 switchkvm();
-
-                // Process is done running for now.
-                // It should have changed its p->state before coming back.
+                
                 c->proc = 0;
-
-                k++;
-            }
-
-        }
-        //else if (schedulingMethod == 3 || schedulingMethod == 4) {
-        //    int minPriority = 6;
-        //    //find lowest priority value
-        //    for (p = ptable.proc; p < &ptable.proc[NPROC]; p++) {
-        //        if (p->state == RUNNABLE && p->priority < minPriority)
-        //            minPriority = p->priority;
-        //    }
-        //    //find queue of programs with the lowest priority
-        //    int lowPriorityProcs[NPROC];
-        //    int i = 0;
-        //    for (p = ptable.proc; p < &ptable.proc[NPROC]; p++) {
-        //        if (p->state == RUNNABLE && p->priority == minPriority) {
-        //            lowPriorityProcs[i] = 1;
-        //        } else {
-        //            lowPriorityProcs[i] = 0;
-        //        }
-        //        i++;
-        //    }
-        //    //run round robin - similar to main round robin but the processes are the ones in this queue
-        //    for (p = ptable.proc; p < &ptable.proc[NPROC]; p++) {
-        //        if (p->state != RUNNABLE || lowPriorityProcs[i] == 0)
-        //            continue;
-//
-//
-        //        // Switch to chosen process.  It is the process's job
-        //        // to release ptable.lock and then reacquire it
-        //        // before jumping back to us.
-        //        p->burstHop = multiQueueQuanta[p->priority];
-        //        c->proc = p;
-        //        switchuvm(p);
-        //        p->state = RUNNING;
-//
-        //        swtch(&(c->scheduler), p->context);
-        //        switchkvm();
-//
-        //        // Process is done running for now.
-        //        // It should have changed its p->state before coming back.
-        //        c->proc = 0;
-        //    }
-        //}
+                }
+              queueIndex++;
+       }
+       
         release(&ptable.lock);
-
     }
 }
 
@@ -597,7 +545,7 @@ wakeup1(void *chan) {
     for (p = ptable.proc; p < &ptable.proc[NPROC]; p++)
         if (p->state == SLEEPING && p->chan == chan) {
             p->state = RUNNABLE;
-            if (schedulingMethod == 4)
+            if (schedulerStrategy == 4)
                 p->priority = 1;
         }
 }
@@ -671,13 +619,13 @@ procdump(void) {
 
 int
 setSchadulerStrategy(int value) {
-    schedulingMethod = value;
-    return schedulingMethod;
+    schedulerStrategy = value;
+    return schedulerStrategy;
 }
 
 
 int
-changePriority(int priority) {
+setPriority(int priority) {
     if (priority >= 1 && priority <= 6)
         myproc()->priority = priority;
     else
@@ -765,3 +713,18 @@ int getWaitingTime(int pid){
     return proc->waitingTime;
 }
 
+int getPriority(int pid){
+    struct proc *proc = myproc();
+    if (pid != -1) {
+        acquire(&ptable.lock);
+        struct proc *p;
+        for (p = ptable.proc; p < &ptable.proc[NPROC]; p++) {
+            if (p->pid == pid) {
+                proc = p;
+                break;
+            }
+        }
+        release(&ptable.lock);
+    }
+    return proc->priority;
+}

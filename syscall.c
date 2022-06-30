@@ -108,8 +108,9 @@ extern int sys_getTurnaroundTime(void);
 extern int sys_getTerminateTime(void);
 extern int sys_getWaitingTime(void);
 extern int sys_getburstTime(void);
-extern int sys_changePriority(void);
+extern int sys_setPriority(void);
 extern int sys_getEnteringTime(void);
+extern int sys_getPriority(void);
 
 static int (*syscalls[])(void) = {
 [SYS_fork]    sys_fork,
@@ -138,8 +139,9 @@ static int (*syscalls[])(void) = {
 [SYS_getWaitingTime] sys_getWaitingTime,
 [SYS_getburstTime] sys_getburstTime,
 [SYS_getTerminateTime] sys_getTerminateTime,
-[SYS_changePriority] sys_changePriority,
+[SYS_setPriority] sys_setPriority,
 [SYS_getEnteringTime] sys_getEnteringTime,
+[SYS_getPriority] sys_getPriority,
 };
 
 void

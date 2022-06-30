@@ -106,8 +106,6 @@ int             pipewrite(struct pipe*, char*, int);
 int             cpuid(void);
 void            exit(void);
 int             fork(void);
-int             existsBetterProcess(void);
-//void            decrement_timer(void);
 int             growproc(int);
 int             kill(int);
 struct cpu*     mycpu(void);
@@ -129,8 +127,9 @@ int             getTerminateTime(int pid);
 int             getEnteringTime(int pid);
 int             getWaitingTime(int pid);
 int             getCBTime(int pid);
-int             changePriority(int priority);
-
+int             setPriority(int priority);
+int             getPriority(int pid);
+int             isMoreImportantProcess();
 
 // swtch.S
 void            swtch(struct context**, struct context*);

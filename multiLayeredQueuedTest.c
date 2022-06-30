@@ -8,7 +8,7 @@ int
 main(void)
 {
     setSchadulerStrategy(3);
-    //changePriority(1);
+    //setPriority(1);
     int i=0;
     //int k = getpid();
     //printf(1,"parent pid : %d\n" , k);
@@ -21,32 +21,32 @@ main(void)
             }
             printf(1,"fork %d completed\n",i+1);
         } else {
-            changePriority(1);
+            setPriority(1);
             sleep(20);
             break;
         }
     }
 
     if (pid == 0) {
-        //changePriority(6);
+        //setPriority(6);
         pid = getpid();
         if (i < 10) {
-        changePriority(1);
+        setPriority(1);
         } 
         else if (i < 20 && i > 9) {
-        changePriority(2);
+        setPriority(2);
         }
         else if (i < 30 && i > 19) {
-        changePriority(3);
+        setPriority(3);
         }
         else if (i < 40 && i > 29) {
-        changePriority(4);
+        setPriority(4);
         }
         else if (i < 50 && i > 39) {
-        changePriority(5);
+        setPriority(5);
         }
         else if (i < 60 && i > 49) {
-        changePriority(6);
+        setPriority(6);
         }
         for (int j=1 ; j<200 ; j++) {
             printf(1,"%d : %d\n" , pid , j);
@@ -60,7 +60,7 @@ main(void)
         printf(1,"burstTime of %d : %d\n" , i , burstTime);
         exit();
     } else {
-        changePriority(1);
+        setPriority(1);
         for (int i=0 ; i<60 ; i++) {
             wait();
             printf(1,"Wait %d is finished\n",i);

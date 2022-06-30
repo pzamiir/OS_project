@@ -35,5 +35,6 @@ SYSCALL(getTurnaroundTime)
 SYSCALL(getWaitingTime)
 SYSCALL(getburstTime)
 SYSCALL(getEnteringTime)
-SYSCALL(changePriority)
+SYSCALL(setPriority)
+SYSCALL(getPriority)
 

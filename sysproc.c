@@ -146,12 +146,20 @@ sys_getEnteringTime(void){
 }
 
 int
-sys_changePriority(void)
+sys_setPriority(void)
 {
   int priority;
   if ((argint(0, &priority)) < 0)
     return -1;
-  return changePriority(priority);  
+  return setPriority(priority);  
+}
+
+int 
+sys_getPriority(void){
+    int pid;
+    if(argint(1, &pid) < 0)
+      return -1;
+    return getPriority(pid);
 }
 
 

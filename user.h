@@ -30,7 +30,8 @@ int getWaitingTime(int pid);
 int getburstTime(int pid);
 int getEnteringTime(int pid);
 int consolePrint(char* msg);
-int changePriority(int priority);
+int setPriority(int priority);
+int getPriority(int pid);
 
 
 // ulib.c

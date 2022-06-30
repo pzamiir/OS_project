@@ -25,6 +25,7 @@
 #define SYS_getWaitingTime 24
 #define SYS_getburstTime 25
 #define SYS_getTerminateTime 26
-#define SYS_changePriority 27
+#define SYS_setPriority 27
 #define SYS_getEnteringTime 28
+#define SYS_getPriority 29
 

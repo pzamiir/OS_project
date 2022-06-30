@@ -15,9 +15,7 @@ int main(void)
             exit();
         }
         if (pid == 0)
-        {
             break;
-        }
     }
     if (pid == 0)
     {
@@ -37,14 +35,14 @@ int main(void)
     }
     else
     {
+        int totalBurst = 0;
         int totalTurnaround = 0;
         int totalWaiting = 0;
-        int totalBurst = 0;
 
         for (int i = 0; i < 10; i++)
         {
             pid = wait();
-            int turnAroundTime =getTurnaroundTime(pid);
+            int turnAroundTime = getTurnaroundTime(pid);
             int waitingTime = getWaitingTime(pid);
             int burstTime = getburstTime(pid);
             totalTurnaround += turnAroundTime;
@@ -53,7 +51,7 @@ int main(void)
         }
         int avgCBT = (totalBurst) / 10;
         int avgTAT = (totalTurnaround) / 10;
-        int avgWT =  (totalWaiting) / 10;
+        int avgWT = (totalWaiting) / 10;
         printf(1, "Avg of CBT: %d\n", avgCBT);
         printf(1, "Avg of turnAroundTime: %d\n", avgTAT);
         printf(1, "Avg of WaitingTime: %d\n", avgWT);
