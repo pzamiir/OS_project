@@ -103,11 +103,13 @@ extern int sys_unlink(void);
 extern int sys_wait(void);
 extern int sys_write(void);
 extern int sys_uptime(void);
-extern int sys_changePolicy(void);
+extern int sys_setSchadulerStrategy(void);
 extern int sys_getTurnaroundTime(void);
+extern int sys_getTerminateTime(void);
 extern int sys_getWaitingTime(void);
-extern int sys_getCBT(void);
+extern int sys_getburstTime(void);
 extern int sys_changePriority(void);
+extern int sys_getEnteringTime(void);
 
 static int (*syscalls[])(void) = {
 [SYS_fork]    sys_fork,
@@ -131,11 +133,13 @@ static int (*syscalls[])(void) = {
 [SYS_link]    sys_link,
 [SYS_mkdir]   sys_mkdir,
 [SYS_close]   sys_close,
-[SYS_changePolicy]  sys_changePolicy,
+[SYS_setSchadulerStrategy]  sys_setSchadulerStrategy,
 [SYS_getTurnaroundTime] sys_getTurnaroundTime,
 [SYS_getWaitingTime] sys_getWaitingTime,
-[SYS_getCBT] sys_getCBT,
+[SYS_getburstTime] sys_getburstTime,
+[SYS_getTerminateTime] sys_getTerminateTime,
 [SYS_changePriority] sys_changePriority,
+[SYS_getEnteringTime] sys_getEnteringTime,
 };
 
 void

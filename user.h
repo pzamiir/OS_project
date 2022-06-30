@@ -23,10 +23,12 @@ int getpid(void);
 char* sbrk(int);
 int sleep(int);
 int uptime(void);
-int changePolicy(int value);
-int getTurnaroundTime(void);
-int getWaitingTime(void);
-int getCBT(void);
+int setSchadulerStrategy(int value);
+int getTerminateTime(int pid);
+int getTurnaroundTime(int pid);
+int getWaitingTime(int pid);
+int getburstTime(int pid);
+int getEnteringTime(int pid);
 int consolePrint(char* msg);
 int changePriority(int priority);
 

@@ -111,13 +111,14 @@ allocproc(void) {
     p->context = (struct context *) sp;
     memset(p->context, 0, sizeof *p->context);
     p->context->eip = (uint) forkret;
-    p->turnaround_time = 0;
-    p->CBT = 0;
-    p->waiting_time = 0;
-    p->priority = 3;
-    p->quantum_time_left = 0;
     acquire(&tickslock);
-    p->creation_time = ticks;
+    p->enteringTime = ticks;
+    p->terminateTime=0;
+    p->turnAroundTime = 0;
+    p->burstTime = 0;
+    p->waitingTime = 0;
+    p->priority = 3;
+    p->burstHop = 0;
     release(&tickslock);
     return p;
 }
@@ -239,19 +240,26 @@ int existsBetterProcess(void) {
     return 0;
 }
 
-// CHANGE WAITING AND RUNNING AND CBT
 void updateProcessTimes(void) {
     struct proc *p;
     acquire(&ptable.lock);
     for (p = ptable.proc; p < &ptable.proc[NPROC]; p++) {
-        if (p->state == UNUSED || p->state == EMBRYO || p->state == ZOMBIE)
-            continue;
-        p->turnaround_time++;
-        if (p->state == RUNNABLE)
-            p->waiting_time++;
-        if (p->state == RUNNING) {
-            p->CBT++;
-            p->quantum_time_left--;
+        switch(p->state) {
+            default:
+                //for other states do nothing
+            break;
+            case RUNNABLE:
+                p->turnAroundTime++;
+                p->waitingTime++;        
+            break;
+            case SLEEPING:
+                p->turnAroundTime++;
+            break;
+            case RUNNING:
+                p->turnAroundTime++;
+                p->burstTime++;
+                p->burstHop--;
+            break;            
         }
     }
     release(&ptable.lock);
@@ -299,6 +307,7 @@ exit(void) {
 
     // Jump into the scheduler, never to return.
     curproc->state = ZOMBIE;
+    curproc->terminateTime=ticks;
     sched();
     panic("zombie exit");
 }
@@ -376,9 +385,9 @@ scheduler(void) {
                 // to release ptable.lock and then reacquire it
                 // before jumping back to us.
                 if (schedulingMethod == 1)
-                    p->quantum_time_left = QUANTUM;
+                    p->burstHop = QUANTUM;
                 else
-                    p->quantum_time_left = 1;
+                    p->burstHop = 1;
                 c->proc = p;
                 switchuvm(p);
                 p->state = RUNNING;
@@ -422,9 +431,9 @@ scheduler(void) {
                 // to release ptable.lock and then reacquire it
                 // before jumping back to us.
                 if(schedulingMethod==2)
-                    p->quantum_time_left = QUANTUM;
+                    p->burstHop = QUANTUM;
                 else
-                    p->quantum_time_left=multiQueueQuanta[p->priority-1];
+                    p->burstHop=multiQueueQuanta[p->priority-1];
                 c->proc = p;
                 switchuvm(p);
                 p->state = RUNNING;
@@ -467,7 +476,7 @@ scheduler(void) {
         //        // Switch to chosen process.  It is the process's job
         //        // to release ptable.lock and then reacquire it
         //        // before jumping back to us.
-        //        p->quantum_time_left = multiQueueQuanta[p->priority];
+        //        p->burstHop = multiQueueQuanta[p->priority];
         //        c->proc = p;
         //        switchuvm(p);
         //        p->state = RUNNING;
@@ -661,7 +670,7 @@ procdump(void) {
 
 
 int
-changePolicy(int value) {
+setSchadulerStrategy(int value) {
     schedulingMethod = value;
     return schedulingMethod;
 }
@@ -676,5 +685,83 @@ changePriority(int priority) {
     return 0;
 }
 
+int getEnteringTime(int pid){
+    struct proc *proc = myproc();
+    if (pid != -1) {
+        acquire(&ptable.lock);
+        struct proc *p;
+        for (p = ptable.proc; p < &ptable.proc[NPROC]; p++) {
+            if (p->pid == pid) {
+                proc = p;
+                break;
+            }
+        }
+        release(&ptable.lock);
+    }
+    return proc->enteringTime;
+}
 
+int getTerminateTime(int pid){
+    struct proc *proc = myproc();
+    if (pid != -1) {
+        acquire(&ptable.lock);
+        struct proc *p;
+        for (p = ptable.proc; p < &ptable.proc[NPROC]; p++) {
+            if (p->pid == pid) {
+                proc = p;
+                break;
+            }
+        }
+        release(&ptable.lock);
+    }
+    return proc->terminateTime;
+}
+
+int getCBTime(int pid){
+    struct proc *proc = myproc();
+    if (pid != -1) {
+        acquire(&ptable.lock);
+        struct proc *p;
+        for (p = ptable.proc; p < &ptable.proc[NPROC]; p++) {
+            if (p->pid == pid) {
+                proc = p;
+                break;
+            }
+        }
+        release(&ptable.lock);
+    }
+    return proc->burstTime;
+}
+
+int getTurnaroundTime(int pid){
+    struct proc *proc = myproc();
+    if (pid != -1) {
+        acquire(&ptable.lock);
+        struct proc *p;
+        for (p = ptable.proc; p < &ptable.proc[NPROC]; p++) {
+            if (p->pid == pid) {
+                proc = p;
+                break;
+            }
+        }
+        release(&ptable.lock);
+    }
+    return proc->turnAroundTime;
+}
+
+int getWaitingTime(int pid){
+    struct proc *proc = myproc();
+    if (pid != -1) {
+        acquire(&ptable.lock);
+        struct proc *p;
+        for (p = ptable.proc; p < &ptable.proc[NPROC]; p++) {
+            if (p->pid == pid) {
+                proc = p;
+                break;
+            }
+        }
+        release(&ptable.lock);
+    }
+    return proc->waitingTime;
+}
 

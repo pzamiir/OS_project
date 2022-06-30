@@ -93,35 +93,57 @@ sys_uptime(void)
 
 
 int
-sys_changePolicy(void)
+sys_setSchadulerStrategy(void)
 {
   int value;
   if ((argint(0, &value)) < 0)
     return -1;
-  return changePolicy(value);  
+  return setSchadulerStrategy(value);  
 }
 
 int
 sys_getTurnaroundTime(void)
 {
-  return myproc()->turnaround_time;
+    int pid;
+    if(argint(1, &pid) < 0)
+      return -1;
+  return getTurnaroundTime(pid);
 }
 
 int
 sys_getWaitingTime(void)
-{
-  return myproc()->waiting_time;
+{     
+    int pid;
+    if(argint(1, &pid) < 0)
+      return -1;
+  return getWaitingTime(pid);
 }
 
 
 int
-sys_getCBT(void)
+sys_getburstTime(void)
 {
-  return myproc()->CBT;
+    int pid;
+    if(argint(1, &pid) < 0)
+      return -1;
+  return getCBTime(pid);
 }
 
+int 
+sys_getTerminateTime(void){
+    int pid;
+    if(argint(1, &pid) < 0)
+      return -1;
+  return getTerminateTime(pid);
+}
 
-
+int 
+sys_getEnteringTime(void){
+    int pid;
+    if(argint(1, &pid) < 0)
+      return -1;
+  return getEnteringTime(pid);
+}
 
 int
 sys_changePriority(void)

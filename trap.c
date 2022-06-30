@@ -107,14 +107,14 @@ trap(struct trapframe *tf)
      tf->trapno == T_IRQ0+IRQ_TIMER ) {
       if(schedulingMethod==0)
         yield();
-      else if (schedulingMethod==1 && myproc()->quantum_time_left==0)
+      else if (schedulingMethod==1 && myproc()->burstHop==0)
           yield();
-      else if(schedulingMethod==2 && myproc()->quantum_time_left==0)
+      else if(schedulingMethod==2 && myproc()->burstHop==0)
           yield();
-      else if( schedulingMethod==3 && (myproc()->quantum_time_left==0 || existsBetterProcess()))
+      else if( schedulingMethod==3 && (myproc()->burstHop==0 || existsBetterProcess()))
           yield();
       else if(schedulingMethod==4){
-          if (myproc()->quantum_time_left==0)
+          if (myproc()->burstHop==0)
           {
               myproc()->priority++;
           }

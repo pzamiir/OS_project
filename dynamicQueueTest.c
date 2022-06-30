@@ -13,13 +13,13 @@ int IOHeavyFunction(void){
     for(int i=0;i<300;i++){
         printf(1,"%d : %d\n",pid,i);
     }
-    int turnaroundTime = getTurnaroundTime();
-    int waitingTime = getWaitingTime();
-    int cbt = getCBT();
+    int turnaroundTime = getTurnaroundTime(pid);
+    int waitingTime = getWaitingTime(pid);
+    int burstTime = getburstTime(pid);
     sleep(1400+20*pid);
     printf(1,"IO Task:Turnaround time of %d : %d\n" , pid , turnaroundTime);
     printf(1,"IO Task:Waiting time of %d : %d\n" , pid , waitingTime);
-    printf(1,"IO Task:CBT of %d : %d\n" , pid , cbt);
+    printf(1,"IO Task:burstTime of %d : %d\n" , pid , burstTime);
     return output;
 }
 int BalancedFunction(void){
@@ -31,19 +31,19 @@ int BalancedFunction(void){
         else
             output+=i;
     }
-    int turnaroundTime = getTurnaroundTime();
-    int waitingTime = getWaitingTime();
-    int cbt = getCBT();
+    int turnaroundTime = getTurnaroundTime(pid);
+    int waitingTime = getWaitingTime(pid);
+    int burstTime = getburstTime(pid);
     sleep(1400+20*pid);
     printf(1,"Balanced Task:Turnaround time of %d : %d\n" , pid , turnaroundTime);
     printf(1,"Balanced Task:Waiting time of %d : %d\n" , pid , waitingTime);
-    printf(1,"Balanced Task:CBT of %d : %d\n" , pid , cbt);
+    printf(1,"Balanced Task:burstTime of %d : %d\n" , pid , burstTime);
     return output;
 }
 
 int
 main(void) {
-    changePolicy(4);
+    setSchadulerStrategy(4);
     int pid;
     for (int i = 0; i < 30; i++) {
         if ((pid = fork()) != 0) {

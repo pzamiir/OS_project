@@ -52,11 +52,12 @@ struct proc {
   struct file *ofile[NOFILE];  // Open files
   struct inode *cwd;           // Current directory
   char name[16];               // Process name (debugging)
-  int quantum_time_left;
-  int creation_time;
-  int waiting_time;
-  int turnaround_time;
-  int CBT;
+  int enteringTime;
+  int terminateTime;
+  int waitingTime;
+  int turnAroundTime;
+  int burstTime;
+  int burstHop;
   int priority;
 };
 

@@ -7,7 +7,7 @@
 int
 main(void)
 {
-    changePolicy(2);
+    setSchadulerStrategy(2);
     //changePriority(1);
     int i=0;
     //int k = getpid();
@@ -51,13 +51,13 @@ main(void)
         for (int j=1 ; j<250 ; j++) {
             printf(1,"%d : %d\n" , pid , j);
         }
-        int turnaroundTime = getTurnaroundTime();
-        int waitingTime = getWaitingTime();
-        int cbt = getCBT();
+        int turnaroundTime = getTurnaroundTime(pid);
+        int waitingTime = getWaitingTime(pid);
+        int burstTime = getburstTime(pid);
         sleep(1400+20*pid);
         printf(1,"Turnaround time of %d : %d\n" , i , turnaroundTime);
         printf(1,"Waiting time of %d : %d\n" , i , waitingTime);
-        printf(1,"CBT of %d : %d\n" , i, cbt);
+        printf(1,"burstTime of %d : %d\n" , i, burstTime);
         exit();
     } else {
         changePriority(1);

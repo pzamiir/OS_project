@@ -181,7 +181,6 @@ UPROGS=\
 	_usertests\
 	_wc\
 	_zombie\
-	_changePolicyTest\
 	_roundRobinTest\
 	_prioritySchedTest\
 	_multiLayeredQueuedTest\
@@ -258,7 +257,6 @@ EXTRA=\
 	printf.c umalloc.c\
 	README dot-bochsrc *.pl toc.* runoff runoff1 runoff.list\
 	.gdbinit.tmpl gdbutil\
-	changePolicyTest.c\
 	roundRobinTest.c\
 	prioritySchedTest.c\
 	multiLayeredQueuedTest.c\
