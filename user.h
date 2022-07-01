@@ -32,7 +32,7 @@ int getburstTime(int pid);
 int getEnteringTime(int pid);
 int consolePrint(char* msg);
 int setPriority(int priority);
-
+int settickets(int ticket);
 
 // ulib.c
 int stat(const char*, struct stat*);

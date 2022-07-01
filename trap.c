@@ -113,6 +113,10 @@ trap(struct trapframe *tf)
           }
       else if ( schedulerStrategy==3 && (myproc()->burstHop==0 || isMoreImportantProcess()))
           yield();
+      else if (schedulerStrategy == 4){
+  //      cprintf("YELD");
+        yield();
+      }
   }
 
   // Check if the process has been killed since we yielded

@@ -6,6 +6,7 @@
 #include "x86.h"
 #include "proc.h"
 #include "spinlock.h"
+#include "rand.h"
 
 struct {
     struct spinlock lock;
@@ -122,6 +123,7 @@ allocproc(void) {
     p->burstTime = 0;
     p->waitingTime = 0;
     p->priority = 3;
+    p->tickets=10;
     p->burstHop = 0;
     release(&tickslock);
     return p;
@@ -393,6 +395,7 @@ scheduler(void) {
     struct cpu *c = mycpu();
     c->proc = 0;
     schedulerStrategy = 0;
+  //  int foundproc = 1;
     for (;;) {
         sti();
         acquire(&ptable.lock);
@@ -463,8 +466,36 @@ scheduler(void) {
                 c->proc = 0;
                 }
               queueIndex++;
+       } else if(schedulerStrategy == 4)
+       {
+            int tickets_passed=0;
+            int totalTickets = 0;
+            for(p = ptable.proc; p < &ptable.proc[NPROC]; p++){
+                if(p->state != RUNNABLE){
+                    continue;
+                }
+                totalTickets = totalTickets + p->tickets;  
+            }
+
+            long winner = random_at_most(totalTickets);
+            for (p = ptable.proc; p < &ptable.proc[NPROC]; p++) {
+                if (p->state != RUNNABLE)
+                    continue;
+
+                tickets_passed += p->tickets;
+                if(tickets_passed < winner)
+                    continue;
+                c->proc = p;
+                p->burstHop = QUANTUM;
+                switchuvm(p);
+                p->state = RUNNING;
+
+                swtch(&(c->scheduler), p->context);
+                switchkvm();
+                c->proc = 0;
+                break;
+            }    
        }
-       
         release(&ptable.lock);
     }
 }

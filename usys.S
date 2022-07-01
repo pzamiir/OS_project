@@ -37,4 +37,5 @@ SYSCALL(getburstTime)
 SYSCALL(getEnteringTime)
 SYSCALL(setPriority)
 SYSCALL(getPriority)
+SYSCALL(settickets)
 

@@ -28,4 +28,4 @@
 #define SYS_setPriority 27
 #define SYS_getEnteringTime 28
 #define SYS_getPriority 29
-
+#define SYS_settickets 30

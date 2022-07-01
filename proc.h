@@ -60,6 +60,7 @@ struct proc {
   int burstTime;
   int burstHop;
   int priority;
+  int tickets;
 };
 
 // Process memory is laid out contiguously, low addresses first:

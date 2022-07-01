@@ -111,6 +111,7 @@ extern int sys_getburstTime(void);
 extern int sys_setPriority(void);
 extern int sys_getEnteringTime(void);
 extern int sys_getPriority(void);
+extern int sys_settickets(void);
 
 static int (*syscalls[])(void) = {
 [SYS_fork]    sys_fork,
@@ -142,6 +143,7 @@ static int (*syscalls[])(void) = {
 [SYS_setPriority] sys_setPriority,
 [SYS_getEnteringTime] sys_getEnteringTime,
 [SYS_getPriority] sys_getPriority,
+[SYS_settickets] sys_settickets,
 };
 
 void
