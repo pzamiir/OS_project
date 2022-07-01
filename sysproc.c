@@ -105,7 +105,7 @@ int
 sys_getTurnaroundTime(void)
 {
     int pid;
-    if(argint(1, &pid) < 0)
+    if(argint(0, &pid) < 0)
       return -1;
   return getTurnaroundTime(pid);
 }
@@ -114,7 +114,7 @@ int
 sys_getWaitingTime(void)
 {     
     int pid;
-    if(argint(1, &pid) < 0)
+    if(argint(0, &pid) < 0)
       return -1;
   return getWaitingTime(pid);
 }
@@ -124,7 +124,7 @@ int
 sys_getburstTime(void)
 {
     int pid;
-    if(argint(1, &pid) < 0)
+    if(argint(0, &pid) < 0)
       return -1;
   return getCBTime(pid);
 }
@@ -132,7 +132,7 @@ sys_getburstTime(void)
 int 
 sys_getTerminateTime(void){
     int pid;
-    if(argint(1, &pid) < 0)
+    if(argint(0, &pid) < 0)
       return -1;
   return getTerminateTime(pid);
 }
@@ -140,7 +140,7 @@ sys_getTerminateTime(void){
 int 
 sys_getEnteringTime(void){
     int pid;
-    if(argint(1, &pid) < 0)
+    if(argint(0, &pid) < 0)
       return -1;
   return getEnteringTime(pid);
 }
@@ -157,9 +157,9 @@ sys_setPriority(void)
 int 
 sys_getPriority(void){
     int pid;
-    if(argint(1, &pid) < 0)
+    if((argint(0, &pid)) < 0)
       return -1;
-    return getPriority(pid);
+    return getProcessPriority(pid);
 }
 
 

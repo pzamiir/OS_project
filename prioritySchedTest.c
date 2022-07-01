@@ -73,9 +73,9 @@ int main(void)
 
         for (int i = 0; i < 6; i++)
         {
-            int avgCBT = (classifiedTotalBurst[i]) / 30;
-            int avgTAT = (classifiedTotalTurnaround[i]) / 30;
-            int avgWT = (classifiedTotalWaiting[i]) / 30;
+            int avgCBT = (classifiedTotalBurst[i]) / 5;
+            int avgTAT = (classifiedTotalTurnaround[i]) / 5;
+            int avgWT = (classifiedTotalWaiting[i]) / 5;
             printf(2, "Class[%d]_Avg of CBT: %d\n", i + 1, avgCBT);
             printf(2, "Class[%d]_Avg of turnAroundTime: %d\n", i + 1, avgTAT);
             printf(2, "Class[%d]_Avg of WaitingTime: %d\n", i + 1, avgWT);

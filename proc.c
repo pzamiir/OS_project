@@ -23,9 +23,12 @@ extern void trapret(void);
 
 static void wakeup1(void *chan);
 
+struct spinlock prioLock;
+
 void
 pinit(void) {
     initlock(&ptable.lock, "ptable");
+    initlock(&prioLock,"priorityLock");
 }
 
 // Must be called with interrupts disabled
@@ -87,8 +90,9 @@ allocproc(void) {
 
     found:
     p->state = EMBRYO;
-    p->pid = nextpid++;
-
+    int pid=nextpid++;
+    p->pid = pid;
+    p->immortalPid= pid;
     release(&ptable.lock);
 
     // Allocate kernel stack.
@@ -389,7 +393,6 @@ scheduler(void) {
     struct cpu *c = mycpu();
     c->proc = 0;
     schedulerStrategy = 0;
-    int multiQueueQuanta[6] = {30, 20, 10, 6, 3, 1};
     for (;;) {
         sti();
         acquire(&ptable.lock);
@@ -423,9 +426,33 @@ scheduler(void) {
 
                 if(schedulerStrategy==2)
                     p->burstHop = QUANTUM;
-                else
-                    p->burstHop=multiQueueQuanta[p->priority-1];
-
+                else{
+                    switch (p->priority-1)
+                    {
+                        case 1:
+                            p->burstHop=15;
+                            break;
+                        case 2:
+                            p->burstHop=12;
+                            break;
+                        case 3:
+                            p->burstHop=8;
+                            break;        
+                        case 4:
+                            p->burstHop=6;
+                            break;      
+                        case 5:
+                            p->burstHop=4;
+                            break;       
+                        case 6:
+                            p->burstHop=2;
+                            break;                                                           
+                        default:
+                            p->burstHop=2;
+                            break;
+                    }
+                }
+                  
                 c->proc = p;
                 switchuvm(p);
                 p->state = RUNNING;
@@ -539,14 +566,12 @@ sleep(void *chan, struct spinlock *lk) {
 // Wake up all processes sleeping on chan.
 // The ptable lock must be held.
 static void
-wakeup1(void *chan) {
+wakeup1(void *chan) 
+{
     struct proc *p;
-
     for (p = ptable.proc; p < &ptable.proc[NPROC]; p++)
         if (p->state == SLEEPING && p->chan == chan) {
             p->state = RUNNABLE;
-            if (schedulerStrategy == 4)
-                p->priority = 1;
         }
 }
 
@@ -624,13 +649,14 @@ setSchadulerStrategy(int value) {
 }
 
 
-int
-setPriority(int priority) {
+int setPriority(int priority) {
+    acquire(&prioLock);
     if (priority >= 1 && priority <= 6)
         myproc()->priority = priority;
     else
         myproc()->priority = 5;
-    return 0;
+    release(&prioLock);
+    return priority;
 }
 
 int getEnteringTime(int pid){
@@ -639,7 +665,7 @@ int getEnteringTime(int pid){
         acquire(&ptable.lock);
         struct proc *p;
         for (p = ptable.proc; p < &ptable.proc[NPROC]; p++) {
-            if (p->pid == pid) {
+            if (p->immortalPid == pid) {
                 proc = p;
                 break;
             }
@@ -655,7 +681,7 @@ int getTerminateTime(int pid){
         acquire(&ptable.lock);
         struct proc *p;
         for (p = ptable.proc; p < &ptable.proc[NPROC]; p++) {
-            if (p->pid == pid) {
+            if (p->immortalPid == pid) {
                 proc = p;
                 break;
             }
@@ -671,7 +697,7 @@ int getCBTime(int pid){
         acquire(&ptable.lock);
         struct proc *p;
         for (p = ptable.proc; p < &ptable.proc[NPROC]; p++) {
-            if (p->pid == pid) {
+            if (p->immortalPid == pid) {
                 proc = p;
                 break;
             }
@@ -687,7 +713,7 @@ int getTurnaroundTime(int pid){
         acquire(&ptable.lock);
         struct proc *p;
         for (p = ptable.proc; p < &ptable.proc[NPROC]; p++) {
-            if (p->pid == pid) {
+            if (p->immortalPid == pid) {
                 proc = p;
                 break;
             }
@@ -703,7 +729,7 @@ int getWaitingTime(int pid){
         acquire(&ptable.lock);
         struct proc *p;
         for (p = ptable.proc; p < &ptable.proc[NPROC]; p++) {
-            if (p->pid == pid) {
+            if (p->immortalPid == pid) {
                 proc = p;
                 break;
             }
@@ -713,18 +739,19 @@ int getWaitingTime(int pid){
     return proc->waitingTime;
 }
 
-int getPriority(int pid){
+int getProcessPriority(int pid){
     struct proc *proc = myproc();
     if (pid != -1) {
         acquire(&ptable.lock);
         struct proc *p;
         for (p = ptable.proc; p < &ptable.proc[NPROC]; p++) {
-            if (p->pid == pid) {
+            if (p->immortalPid == pid) {
                 proc = p;
                 break;
             }
         }
         release(&ptable.lock);
     }
+
     return proc->priority;
 }

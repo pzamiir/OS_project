@@ -128,7 +128,7 @@ int             getEnteringTime(int pid);
 int             getWaitingTime(int pid);
 int             getCBTime(int pid);
 int             setPriority(int priority);
-int             getPriority(int pid);
+int             getProcessPriority(int pid);
 int             isMoreImportantProcess();
 
 // swtch.S

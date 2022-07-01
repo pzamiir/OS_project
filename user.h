@@ -26,12 +26,12 @@ int uptime(void);
 int setSchadulerStrategy(int value);
 int getTerminateTime(int pid);
 int getTurnaroundTime(int pid);
+int getPriority(int pid);
 int getWaitingTime(int pid);
 int getburstTime(int pid);
 int getEnteringTime(int pid);
 int consolePrint(char* msg);
 int setPriority(int priority);
-int getPriority(int pid);
 
 
 // ulib.c
