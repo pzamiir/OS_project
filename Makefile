@@ -183,9 +183,10 @@ UPROGS=\
 	_wc\
 	_zombie\
 	_roundRobinTest\
-	_prioritySchedTest\
+	_prioritySchedulingTest\
 	_multiLayeredQueuedTest\
 	_lotteryTest\
+	_multilayerqueue2\
 
 fs.img: mkfs README $(UPROGS)
 	./mkfs fs.img README $(UPROGS)
@@ -260,8 +261,9 @@ EXTRA=\
 	.gdbinit.tmpl gdbutil\
 	roundRobinTest.c\
 	lotteryTest.c\
-	prioritySchedTest.c\
+	prioritySchedulingTest.c\
 	multiLayeredQueuedTest.c\
+	multilayerqueue2.c
 
 dist:
 	rm -rf dist

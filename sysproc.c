@@ -93,12 +93,30 @@ sys_uptime(void)
 
 
 int
-sys_setSchadulerStrategy(void)
+sys_changePolicy(void)
 {
-  int value;
-  if ((argint(0, &value)) < 0)
+  int pol;
+  if ((argint(0, &pol)) < 0)
     return -1;
-  return setSchadulerStrategy(value);  
+  return changePolicy(pol);  
+}
+
+int 
+sys_getPriority(void){
+    int pid;
+    if((argint(0, &pid)) < 0)
+      return -1;
+    return getProcessPriority(pid);
+}
+
+
+int
+sys_setPriority(void)
+{
+  int priority;
+  if ((argint(0, &priority)) < 0)
+    return -1;
+  return setPriority(priority);  
 }
 
 int
@@ -111,17 +129,17 @@ sys_getTurnaroundTime(void)
 }
 
 int
-sys_getWaitingTime(void)
+sys_getWaitTime(void)
 {     
     int pid;
     if(argint(0, &pid) < 0)
       return -1;
-  return getWaitingTime(pid);
+  return getWaitTime(pid);
 }
 
 
 int
-sys_getburstTime(void)
+sys_getCpuBurstTime(void)
 {
     int pid;
     if(argint(0, &pid) < 0)
@@ -130,39 +148,22 @@ sys_getburstTime(void)
 }
 
 int 
-sys_getTerminateTime(void){
+sys_getEndTime(void){
     int pid;
     if(argint(0, &pid) < 0)
       return -1;
-  return getTerminateTime(pid);
+  return getEndTime(pid);
 }
 
 int 
-sys_getEnteringTime(void){
+sys_getstartTime(void){
     int pid;
     if(argint(0, &pid) < 0)
       return -1;
-  return getEnteringTime(pid);
+  return getstartTime(pid);
 }
 
-int
-sys_setPriority(void)
-{
-  int priority;
-  if ((argint(0, &priority)) < 0)
-    return -1;
-  return setPriority(priority);  
-}
-
-int 
-sys_getPriority(void){
-    int pid;
-    if((argint(0, &pid)) < 0)
-      return -1;
-    return getProcessPriority(pid);
-}
-
- int sys_settickets(void)  
+ int sys_lotteryTickets(void)  
  {  
     struct proc *p;
     p=myproc();

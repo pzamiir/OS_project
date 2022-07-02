@@ -16,7 +16,7 @@ struct {
 static struct proc *initproc;
 
 int nextpid = 1;
-int schedulerStrategy = 0;
+int policy = 0;
 
 extern void forkret(void);
 
@@ -24,12 +24,12 @@ extern void trapret(void);
 
 static void wakeup1(void *chan);
 
-struct spinlock prioLock;
+struct spinlock priorityLock;
 
 void
 pinit(void) {
     initlock(&ptable.lock, "ptable");
-    initlock(&prioLock,"priorityLock");
+    initlock(&priorityLock,"priorityLock");
 }
 
 // Must be called with interrupts disabled
@@ -117,14 +117,16 @@ allocproc(void) {
     memset(p->context, 0, sizeof *p->context);
     p->context->eip = (uint) forkret;
     acquire(&tickslock);
-    p->enteringTime = ticks;
-    p->terminateTime=0;
-    p->turnAroundTime = 0;
-    p->burstTime = 0;
-    p->waitingTime = 0;
     p->priority = 3;
     p->tickets=10;
-    p->burstHop = 0;
+    p->burstNeededTime = 0;
+
+    p->startTime = ticks;
+    p->endTime=0;
+    p->turnAroundTime = 0;
+    p->cpuBurstTime = 0;
+    p->waitTime = 0;
+    
     release(&tickslock);
     return p;
 }
@@ -232,7 +234,31 @@ fork(void) {
     return pid;
 }
 
- int isMoreImportantProcess(){
+void processTime(void) {
+    struct proc *p;
+    acquire(&ptable.lock);
+    for (p = ptable.proc; p < &ptable.proc[NPROC]; p++) {
+        if(p->state == RUNNABLE)
+        {
+            p->turnAroundTime++;
+            p->waitTime++;   
+        }          
+        else if(p->state == SLEEPING)
+        {
+            p->turnAroundTime++;
+        }
+        else if(p->state == RUNNING)
+        {
+            p->turnAroundTime++;
+            p->cpuBurstTime++;
+            p->burstNeededTime--;
+         }
+    }
+    release(&ptable.lock);
+    return;
+}
+
+ int higherPriority(){
     int found=0;
     acquire(&ptable.lock);
     struct proc *p;
@@ -242,32 +268,6 @@ fork(void) {
     release(&ptable.lock);
     return found;
  }
-
-void updateProcessTimes(void) {
-    struct proc *p;
-    acquire(&ptable.lock);
-    for (p = ptable.proc; p < &ptable.proc[NPROC]; p++) {
-        switch(p->state) {
-            default:
-                //for other states do nothing
-            break;
-            case RUNNABLE:
-                p->turnAroundTime++;
-                p->waitingTime++;        
-            break;
-            case SLEEPING:
-                p->turnAroundTime++;
-            break;
-            case RUNNING:
-                p->turnAroundTime++;
-                p->burstTime++;
-                p->burstHop--;
-            break;            
-        }
-    }
-    release(&ptable.lock);
-    return;
-}
 
 // Exit the current process.  Does not return.
 // An exited process remains in the zombie state
@@ -310,7 +310,7 @@ exit(void) {
 
     // Jump into the scheduler, never to return.
     curproc->state = ZOMBIE;
-    curproc->terminateTime=ticks;
+    curproc->endTime=ticks;
     sched();
     panic("zombie exit");
 }
@@ -358,26 +358,29 @@ wait(void) {
     }
 }
 
-int getHighestPrio(){
-    struct proc * t;
-    int priority=6;
-    for (t = ptable.proc; t < &ptable.proc[NPROC]; t++) {
-        if (t->state == RUNNABLE && t->priority < priority)
-            priority = t->priority;
+int PrioGetter(){
+    struct proc * p;
+    int priority = 6;
+    for (p = ptable.proc; p < &ptable.proc[NPROC]; p++) {
+        if (p->state == RUNNABLE && p->priority < priority)
+            priority = p->priority;
     }
     return priority;
 }
 
-void makePriorityQueue(int* queue ,int priority){
-    int queueIndex = 0;
+void priQueue(int* queue ,int priority){
+    int temp = 0;
     struct proc * p;
     for (p = ptable.proc; p < &ptable.proc[NPROC]; p++) {
         if (p->state == RUNNABLE && p->priority == priority) {
-            queue[queueIndex] = 1;
-        } else {
-            queue[queueIndex] = 0;
+            queue[temp] = 1;
+        } 
+        else 
+        {
+            queue[temp] = 0;
         }
-        queueIndex++;
+        
+        temp++;
     }
 }
 
@@ -394,22 +397,103 @@ scheduler(void) {
     struct proc *p;
     struct cpu *c = mycpu();
     c->proc = 0;
-    schedulerStrategy = 0;
-  //  int foundproc = 1;
+    policy = 0;
     for (;;) {
         sti();
         acquire(&ptable.lock);
 
-        if (schedulerStrategy <= 1) {
+        if(policy < 1)
+        {
             for (p = ptable.proc; p < &ptable.proc[NPROC]; p++) {
                 if (p->state != RUNNABLE)
                     continue;
-
                 c->proc = p;
-                if (schedulerStrategy == 1)
-                    p->burstHop = QUANTUM;
-                else
-                    p->burstHop = 1;
+                p->burstNeededTime  = 1;
+                switchuvm(p);
+                p->state = RUNNING;
+                swtch(&(c->scheduler), p->context);
+                switchkvm();
+                c->proc = 0;
+            }
+        }
+        else if (policy == 1)
+        {
+            for (p = ptable.proc; p < &ptable.proc[NPROC]; p++) {
+                if (p->state != RUNNABLE)
+                    continue;
+                c->proc = p;
+                p->burstNeededTime  = QUANTUM;
+                switchuvm(p);
+                p->state = RUNNING;
+                swtch(&(c->scheduler), p->context);
+                switchkvm();
+                c->proc = 0;
+        	}
+        }
+
+        else if(policy == 2)
+        {
+	        int temp=0;
+	        for (p = ptable.proc; p < &ptable.proc[NPROC]; p++) {
+                int priorityQueue[NPROC];
+                priQueue(priorityQueue,PrioGetter());                                 
+                if (p->state != RUNNABLE || priorityQueue[temp] == 0)
+                {
+                    temp++;
+                    continue;
+                }
+                p->burstNeededTime = QUANTUM;
+                c->proc = p;
+                switchuvm(p);
+                p->state = RUNNING;
+
+                swtch(&(c->scheduler), p->context);
+                switchkvm();
+                c->proc = 0;
+                }
+        }
+
+        else if(policy == 3)
+        {       
+	        int temp = 0;
+            for (p = ptable.proc; p < &ptable.proc[NPROC]; p++) {
+                int priorityQueue[NPROC];
+                priQueue(priorityQueue,PrioGetter());                               
+                if (p->state != RUNNABLE || priorityQueue[temp] == 0){
+                    temp++;
+                    continue;
+                }
+	    	 
+	    	    if(p->priority-1 == 1)
+	    	    {
+	    	    	p->burstNeededTime = 16;
+	    	    }
+	    	    else if(p->priority-1 == 2)
+	    	    {
+	    	    	p->burstNeededTime = 12;
+	    	    }
+	    	    else if(p->priority-1 == 3)
+                {
+                    p->burstNeededTime = 10;
+		        }
+         
+         	    else if(p->priority-1 == 4)
+         	    {
+         		    p->burstNeededTime = 8;
+         	    }
+         	    else if(p->priority-1 == 5)
+         	    {   
+         		    p->burstNeededTime = 4;
+         	    }   
+         	    else if(p->priority-1 == 6)
+         	    {
+         		    p->burstNeededTime = 2;
+         	    }
+         	    else
+         	    {
+         		    p->burstNeededTime = 2;
+         	    }
+         	    c->proc = p;
                 switchuvm(p);
                 p->state = RUNNING;
 
@@ -417,59 +501,14 @@ scheduler(void) {
                 switchkvm();
                 c->proc = 0;
             }
-        } else if (schedulerStrategy == 2 || schedulerStrategy == 3) {
-            int queueIndex=0;
-            for (p = ptable.proc; p < &ptable.proc[NPROC]; p++) {
-                int priorityQueue[NPROC];
-                makePriorityQueue(priorityQueue,getHighestPrio());                                 
-                if (p->state != RUNNABLE || priorityQueue[queueIndex] == 0){
-                    queueIndex++;
-                    continue;
-                }
+            temp++;
+        }
 
-                if(schedulerStrategy==2)
-                    p->burstHop = QUANTUM;
-                else{
-                    switch (p->priority-1)
-                    {
-                        case 1:
-                            p->burstHop=15;
-                            break;
-                        case 2:
-                            p->burstHop=12;
-                            break;
-                        case 3:
-                            p->burstHop=8;
-                            break;        
-                        case 4:
-                            p->burstHop=6;
-                            break;      
-                        case 5:
-                            p->burstHop=4;
-                            break;       
-                        case 6:
-                            p->burstHop=2;
-                            break;                                                           
-                        default:
-                            p->burstHop=2;
-                            break;
-                    }
-                }
-                  
-                c->proc = p;
-                switchuvm(p);
-                p->state = RUNNING;
-
-                swtch(&(c->scheduler), p->context);
-                switchkvm();
-                
-                c->proc = 0;
-                }
-              queueIndex++;
-       } else if(schedulerStrategy == 4)
+        //lottery
+       else if(policy == 4)
        {
-            int tickets_passed=0;
             int totalTickets = 0;
+            int passed = 0;
             for(p = ptable.proc; p < &ptable.proc[NPROC]; p++){
                 if(p->state != RUNNABLE){
                     continue;
@@ -477,16 +516,16 @@ scheduler(void) {
                 totalTickets = totalTickets + p->tickets;  
             }
 
-            long winner = random_at_most(totalTickets);
+            int winner = random_at_most(totalTickets);
             for (p = ptable.proc; p < &ptable.proc[NPROC]; p++) {
                 if (p->state != RUNNABLE)
                     continue;
 
-                tickets_passed += p->tickets;
-                if(tickets_passed < winner)
+                passed += p->tickets;
+                if(passed < winner)
                     continue;
                 c->proc = p;
-                p->burstHop = QUANTUM;
+                p->burstNeededTime = QUANTUM;
                 switchuvm(p);
                 p->state = RUNNING;
 
@@ -672,105 +711,8 @@ procdump(void) {
     }
 }
 
-
-int
-setSchadulerStrategy(int value) {
-    schedulerStrategy = value;
-    return schedulerStrategy;
-}
-
-
-int setPriority(int priority) {
-    acquire(&prioLock);
-    if (priority >= 1 && priority <= 6)
-        myproc()->priority = priority;
-    else
-        myproc()->priority = 5;
-    release(&prioLock);
-    return priority;
-}
-
-int getEnteringTime(int pid){
-    struct proc *proc = myproc();
-    if (pid != -1) {
-        acquire(&ptable.lock);
-        struct proc *p;
-        for (p = ptable.proc; p < &ptable.proc[NPROC]; p++) {
-            if (p->immortalPid == pid) {
-                proc = p;
-                break;
-            }
-        }
-        release(&ptable.lock);
-    }
-    return proc->enteringTime;
-}
-
-int getTerminateTime(int pid){
-    struct proc *proc = myproc();
-    if (pid != -1) {
-        acquire(&ptable.lock);
-        struct proc *p;
-        for (p = ptable.proc; p < &ptable.proc[NPROC]; p++) {
-            if (p->immortalPid == pid) {
-                proc = p;
-                break;
-            }
-        }
-        release(&ptable.lock);
-    }
-    return proc->terminateTime;
-}
-
-int getCBTime(int pid){
-    struct proc *proc = myproc();
-    if (pid != -1) {
-        acquire(&ptable.lock);
-        struct proc *p;
-        for (p = ptable.proc; p < &ptable.proc[NPROC]; p++) {
-            if (p->immortalPid == pid) {
-                proc = p;
-                break;
-            }
-        }
-        release(&ptable.lock);
-    }
-    return proc->burstTime;
-}
-
-int getTurnaroundTime(int pid){
-    struct proc *proc = myproc();
-    if (pid != -1) {
-        acquire(&ptable.lock);
-        struct proc *p;
-        for (p = ptable.proc; p < &ptable.proc[NPROC]; p++) {
-            if (p->immortalPid == pid) {
-                proc = p;
-                break;
-            }
-        }
-        release(&ptable.lock);
-    }
-    return proc->turnAroundTime;
-}
-
-int getWaitingTime(int pid){
-    struct proc *proc = myproc();
-    if (pid != -1) {
-        acquire(&ptable.lock);
-        struct proc *p;
-        for (p = ptable.proc; p < &ptable.proc[NPROC]; p++) {
-            if (p->immortalPid == pid) {
-                proc = p;
-                break;
-            }
-        }
-        release(&ptable.lock);
-    }
-    return proc->waitingTime;
-}
-
-int getProcessPriority(int pid){
+int 
+getProcessPriority(int pid){
     struct proc *proc = myproc();
     if (pid != -1) {
         acquire(&ptable.lock);
@@ -786,3 +728,112 @@ int getProcessPriority(int pid){
 
     return proc->priority;
 }
+
+
+int
+changePolicy(int pol) {
+    policy = pol;
+    return policy;
+}
+
+
+int 
+setPriority(int priority) {
+    acquire(&priorityLock);
+    if (priority < 1 || priority > 6)
+        myproc()->priority = 5;
+    else
+        myproc()->priority = priority;
+    release(&priorityLock);
+    return priority;
+}
+
+int 
+getstartTime(int pid){
+    struct proc *proc = myproc();
+    if (pid != -1) {
+        acquire(&ptable.lock);
+        struct proc *p;
+        for (p = ptable.proc; p < &ptable.proc[NPROC]; p++) {
+            if (p->immortalPid == pid) {
+                proc = p;
+                break;
+            }
+        }
+        release(&ptable.lock);
+    }
+    return proc->startTime;
+}
+
+int 
+getCBTime(int pid){
+    struct proc *proc = myproc();
+    if (pid != -1) {
+        acquire(&ptable.lock);
+        struct proc *p;
+        for (p = ptable.proc; p < &ptable.proc[NPROC]; p++) {
+            if (p->immortalPid == pid) {
+                proc = p;
+                break;
+            }
+        }
+        release(&ptable.lock);
+    }
+    return proc->cpuBurstTime;
+}
+
+int 
+getWaitTime(int pid){
+    struct proc *proc = myproc();
+    if (pid != -1) {
+        acquire(&ptable.lock);
+        struct proc *p;
+        for (p = ptable.proc; p < &ptable.proc[NPROC]; p++) {
+            if (p->immortalPid == pid) {
+                proc = p;
+                break;
+            }
+        }
+        release(&ptable.lock);
+    }
+    return proc->waitTime;
+}
+
+
+int 
+getEndTime(int pid){
+    struct proc *proc = myproc();
+    if (pid != -1) {
+        acquire(&ptable.lock);
+        struct proc *p;
+        for (p = ptable.proc; p < &ptable.proc[NPROC]; p++) {
+            if (p->immortalPid == pid) {
+                proc = p;
+                break;
+            }
+        }
+        release(&ptable.lock);
+    }
+    return proc->endTime;
+}
+
+
+
+int 
+getTurnaroundTime(int pid){
+    struct proc *proc = myproc();
+    if (pid != -1) {
+        acquire(&ptable.lock);
+        struct proc *p;
+        for (p = ptable.proc; p < &ptable.proc[NPROC]; p++) {
+            if (p->immortalPid == pid) {
+                proc = p;
+                break;
+            }
+        }
+        release(&ptable.lock);
+    }
+    return proc->turnAroundTime;
+}
+
+

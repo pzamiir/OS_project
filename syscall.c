@@ -103,15 +103,15 @@ extern int sys_unlink(void);
 extern int sys_wait(void);
 extern int sys_write(void);
 extern int sys_uptime(void);
-extern int sys_setSchadulerStrategy(void);
+extern int sys_changePolicy(void);
 extern int sys_getTurnaroundTime(void);
-extern int sys_getTerminateTime(void);
-extern int sys_getWaitingTime(void);
-extern int sys_getburstTime(void);
+extern int sys_getEndTime(void);
+extern int sys_getWaitTime(void);
+extern int sys_getCpuBurstTime(void);
 extern int sys_setPriority(void);
-extern int sys_getEnteringTime(void);
+extern int sys_getstartTime(void);
 extern int sys_getPriority(void);
-extern int sys_settickets(void);
+extern int sys_lotteryTickets(void);
 
 static int (*syscalls[])(void) = {
 [SYS_fork]    sys_fork,
@@ -135,15 +135,15 @@ static int (*syscalls[])(void) = {
 [SYS_link]    sys_link,
 [SYS_mkdir]   sys_mkdir,
 [SYS_close]   sys_close,
-[SYS_setSchadulerStrategy]  sys_setSchadulerStrategy,
-[SYS_getTurnaroundTime] sys_getTurnaroundTime,
-[SYS_getWaitingTime] sys_getWaitingTime,
-[SYS_getburstTime] sys_getburstTime,
-[SYS_getTerminateTime] sys_getTerminateTime,
 [SYS_setPriority] sys_setPriority,
-[SYS_getEnteringTime] sys_getEnteringTime,
 [SYS_getPriority] sys_getPriority,
-[SYS_settickets] sys_settickets,
+[SYS_changePolicy]  sys_changePolicy,
+[SYS_getstartTime] sys_getstartTime,
+[SYS_getTurnaroundTime] sys_getTurnaroundTime,
+[SYS_getWaitTime] sys_getWaitTime,
+[SYS_getCpuBurstTime] sys_getCpuBurstTime,
+[SYS_getEndTime] sys_getEndTime,
+[SYS_lotteryTickets] sys_lotteryTickets,
 };
 
 void

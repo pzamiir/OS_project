@@ -23,16 +23,16 @@ int getpid(void);
 char* sbrk(int);
 int sleep(int);
 int uptime(void);
-int setSchadulerStrategy(int value);
-int getTerminateTime(int pid);
+int changePolicy(int value);
+int getEndTime(int pid);
 int getTurnaroundTime(int pid);
 int getPriority(int pid);
-int getWaitingTime(int pid);
-int getburstTime(int pid);
-int getEnteringTime(int pid);
+int getWaitTime(int pid);
+int getCpuBurstTime(int pid);
+int getstartTime(int pid);
 int consolePrint(char* msg);
 int setPriority(int priority);
-int settickets(int ticket);
+int lotteryTickets(int ticket);
 
 // ulib.c
 int stat(const char*, struct stat*);

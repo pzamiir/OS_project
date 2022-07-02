@@ -1,4 +1,4 @@
-extern int schedulerStrategy;
+extern int policy;
 
 
 // Per-CPU state
@@ -53,12 +53,12 @@ struct proc {
   struct file *ofile[NOFILE];  // Open files
   struct inode *cwd;           // Current directory
   char name[16];               // Process name (debugging)
-  int enteringTime;
-  int terminateTime;
-  int waitingTime;
+  int startTime;
+  int endTime;
+  int waitTime;
   int turnAroundTime;
-  int burstTime;
-  int burstHop;
+  int cpuBurstTime;
+  int burstNeededTime;
   int priority;
   int tickets;
 };

@@ -120,16 +120,16 @@ void            userinit(void);
 int             wait(void);
 void            wakeup(void*);
 void            yield(void);
-void            updateProcessTimes(void);
-int             setSchadulerStrategy(int value);
+void            processTime(void);
+int             changePolicy(int pol);
 int             getTurnaroundTime(int pid);
-int             getTerminateTime(int pid);
-int             getEnteringTime(int pid);
-int             getWaitingTime(int pid);
+int             getEndTime(int pid);
+int             getstartTime(int pid);
+int             getWaitTime(int pid);
 int             getCBTime(int pid);
 int             setPriority(int priority);
 int             getProcessPriority(int pid);
-int             isMoreImportantProcess();
+int             higherPriority();
 
 // swtch.S
 void            swtch(struct context**, struct context*);

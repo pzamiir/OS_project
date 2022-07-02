@@ -4,7 +4,7 @@
 
 int main(void)
 {
-    setSchadulerStrategy(1);
+    changePolicy(1);
     int pid;
     for (int i = 0; i < 10; i++)
     {
@@ -14,23 +14,31 @@ int main(void)
             printf(1, "fork error\n");
             exit();
         }
-        if (pid == 0)
-            break;
+        
+        if(pid == 0)
+        	break;
     }
     if (pid == 0)
     {
+
         pid = getpid();
-        for (int j = 1; j < 6; j++)
+
+        
+
+        for (int j = 1; j < 1000; j++)
         {
             printf(1, "%d : %d\n", pid, j);
         }
-        int turnaroundTime = getTurnaroundTime(pid);
-        int waitingTime = getWaitingTime(pid);
-        int burstTime = getburstTime(pid);
-        sleep(100 + 10 * pid); // to print in order
-        printf(1, "PID : %d burstTime : %d\n", pid, burstTime);
-        printf(1, "PID : %d Turnaround : %d\n", pid, turnaroundTime);
-        printf(1, "PID : %d Waiting : %d\n", pid, waitingTime);
+    
+        int cpuBurstTime = getCpuBurstTime(pid);
+        int turnAroundTime = getTurnaroundTime(pid);
+        int waitTime = getWaitTime(pid);
+
+        sleep(2000 + 10 * pid);
+
+        printf(1, "PID : %d burstTime : %d\n", pid, cpuBurstTime);
+        printf(1, "PID : %d Turnaround : %d\n", pid, turnAroundTime);
+        printf(1, "PID : %d Waiting : %d\n", pid, waitTime);
         exit();
     }
     else
@@ -43,8 +51,8 @@ int main(void)
         {
             pid = wait();
             int turnAroundTime = getTurnaroundTime(pid);
-            int waitingTime = getWaitingTime(pid);
-            int burstTime = getburstTime(pid);
+            int waitingTime = getWaitTime(pid);
+            int burstTime = getstartTime(pid);
             totalTurnaround += turnAroundTime;
             totalWaiting += waitingTime;
             totalBurst += burstTime;
@@ -52,10 +60,7 @@ int main(void)
         int avgCBT = (totalBurst) / 10;
         int avgTAT = (totalTurnaround) / 10;
         int avgWT = (totalWaiting) / 10;
-        printf(1, "Avg of CBT: %d\n", avgCBT);
-        printf(1, "Avg of turnAroundTime: %d\n", avgTAT);
-        printf(1, "Avg of WaitingTime: %d\n", avgWT);
-        printf(0, "Parent Finished\n");
+        printf(1, "Average of burstTime is : %d and average of total time is %d and average of waiting time is",avgCBT , avgTAT,avgWT);
     }
     exit();
 }

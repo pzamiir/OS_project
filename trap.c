@@ -50,7 +50,7 @@ trap(struct trapframe *tf)
   case T_IRQ0 + IRQ_TIMER:
     if(cpuid() == 0){
       acquire(&tickslock);
-      updateProcessTimes();
+      processTime();
       ticks++;
       wakeup(&ticks);
       release(&tickslock);
@@ -105,16 +105,15 @@ trap(struct trapframe *tf)
   // If interrupts were on while locks held, would need to check nlock.
   if(myproc() && myproc()->state == RUNNING && tf->trapno == T_IRQ0+IRQ_TIMER ) {
       struct proc * p=myproc();
-      if(schedulerStrategy<= 1 && p->burstHop==0 )
+      if(policy<= 1 && p->burstNeededTime==0 )
         yield();        
-      else if (schedulerStrategy==2) {
-         if (p->burstHop==0 || isMoreImportantProcess())
+      else if (policy==2) {
+         if (p->burstNeededTime==0 || higherPriority())
             yield();
           }
-      else if ( schedulerStrategy==3 && (myproc()->burstHop==0 || isMoreImportantProcess()))
+      else if ( policy==3 && (myproc()->burstNeededTime==0 || higherPriority()))
           yield();
-      else if (schedulerStrategy == 4){
-  //      cprintf("YELD");
+      else if (policy == 4){
         yield();
       }
   }

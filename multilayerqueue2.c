@@ -83,7 +83,7 @@ int main(void)
         int avgCpuBurstTime = (totalBurst) / 60;
         int avgTurnAround = (totalTA) / 60;
         int avgWaitingTime = (totalwait) / 60;
-        printf(1, "Average of burstTime is : %d and average of total time is %d and average of waiting time is",avgCpuBurstTime , avgTurnAround,avgWaitingTime);
+        printf(1, "Average of burstTime is : %d and average of total time is %d and average of waiting time is\n",avgCpuBurstTime , avgTurnAround,avgWaitingTime);
         exit();
     }
 }
